@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum Diskusi - Farid Ardiansyah</title>
+    <style>
+        /* Gaya CSS sama seperti sebelumnya */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: black;
+            color: white;
+            line-height: 1.6;
+        }
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .navbar .datetime {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            font-size: 18px;
+        }
+        .navbar .status {
+            display: flex;
+            align-items: center;
+            font-size: 18px;
+            gap: 10px;
+            margin-right: 40px;
+        }
+        .navbar .status .dots span {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            border-radius: 50%;
+            animation: blink 1.4s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 1; }
+        }
+        .container {
+            padding: 80px 20px 20px;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        p {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        .hidden {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            font-size: 18px;
+        }
+        .footer .left {
+            font-weight: bold;
+            margin-left: 20px;
+        }
+        .footer .right a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+        .footer .right a:hover {
+            text-decoration: underline;
+        }
+        .forum-post {
+            background-color: #222;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .forum-post h3 {
+            margin: 0;
+            font-size: 24px;
+        }
+        .forum-post p {
+            margin: 10px 0;
+        }
+        .forum-post .actions {
+            display: flex;
+            gap: 10px;
+        }
+        .forum-post .actions button {
+            background-color: #00ffcc;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .forum-post .actions button:hover {
+            background-color: #00ccaa;
+        }
+        .comment-section {
+            margin-top: 20px;
+        }
+        .comment-section textarea {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #333;
+            color: white;
+            margin-bottom: 10px;
+        }
+        .comment-section button {
+            background-color: #00ffcc;
+            color: black;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .comment-section button:hover {
+            background-color: #00ccaa;
+        }
+        .comments {
+            margin-top: 20px;
+        }
+        .comment {
+            background-color: #333;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .comment p {
+            margin: 0;
+        }
+        .comment .author {
+            font-weight: bold;
+            color: #00ffcc;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>Forum Diskusi - Farid Ardiansyah</h1>
+        <div class="datetime">
+            <span id="greeting"></span>
+            <span id="day"></span>
+        </div>
+        <div class="status">
+            Bersedia
+            <div class="dots">
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="content">
+            <!-- Form untuk membuat post baru -->
+            <div class="forum-post">
+                <h3>Buat Post Baru</h3>
+                <textarea id="postContent" placeholder="Tulis topik pembicaraan Anda di sini..." rows="4"></textarea>
+                <button onclick="createPost()">Post</button>
+            </div>
+
+            <!-- Daftar Post -->
+            <div id="posts"></div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="left">
+            Farid Ardiansyah
+        </div>
+        <div class="right">
+            <a href="mailto:faridardiansyah061@gmail.com">EMAIL</a>
+            <a href="https://www.instagram.com/fardardinsyh/">INSTAGRAM</a>
+            <a href="https://www.linkedin.com/in/farid-ardiansyah">LINKEDIN</a>
+        </div>
+    </footer>
+
+    <script>
+        // Data post dan komentar (disimpan di localStorage)
+        let posts = JSON.parse(localStorage.getItem('posts')) || [];
+
+        // Fungsi untuk menampilkan pesan selamat berdasarkan waktu
+        function updateGreeting() {
+            const now = new Date();
+            const hour = now.getHours();
+            const greetingElement = document.getElementById('greeting');
+            let greeting;
+
+            if (hour >= 5 && hour < 12) {
+                greeting = "Selamat Pagi";
+            } else if (hour >= 12 && hour < 15) {
+                greeting = "Selamat Siang";
+            } else if (hour >= 15 && hour < 18) {
+                greeting = "Selamat Sore";
+            } else {
+                greeting = "Selamat Malam";
+            }
+
+            greetingElement.textContent = greeting;
+        }
+
+        // Fungsi untuk menampilkan hari
+        function updateDay() {
+            const now = new Date();
+            const options = { weekday: 'long' };
+            const dayElement = document.getElementById('day');
+            dayElement.textContent = now.toLocaleDateString('id-ID', options);
+        }
+
+        // Fungsi untuk membuat post baru
+        function createPost() {
+            const postContent = document.getElementById('postContent').value.trim();
+            if (postContent) {
+                const newPost = {
+                    id: Date.now(),
+                    content: postContent,
+                    comments: []
+                };
+                posts.push(newPost);
+                localStorage.setItem('posts', JSON.stringify(posts));
+                document.getElementById('postContent').value = ''; // Clear input
+                displayPosts();
+            } else {
+                alert("Post tidak boleh kosong!");
+            }
+        }
+
+        // Fungsi untuk menampilkan semua post
+        function displayPosts() {
+            const postsContainer = document.getElementById('posts');
+            postsContainer.innerHTML = posts.map(post => `
+                <div class="forum-post">
+                    <h3>Post #${post.id}</h3>
+                    <p>${post.content}</p>
+                    <div class="actions">
+                        <button onclick="showComments(${post.id})">Lihat Komentar</button>
+                    </div>
+                    <div id="comments-${post.id}" class="comment-section hidden">
+                        <textarea id="comment-${post.id}" placeholder="Tulis komentar Anda di sini..." rows="2"></textarea>
+                        <button onclick="addComment(${post.id})">Kirim Komentar</button>
+                        <div class="comments" id="comment-list-${post.id}"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Fungsi untuk menampilkan komentar
+        function showComments(postId) {
+            const commentSection = document.getElementById(`comments-${postId}`);
+            commentSection.classList.toggle('hidden');
+            const commentList = document.getElementById(`comment-list-${postId}`);
+            const post = posts.find(p => p.id === postId);
+            if (post) {
+                commentList.innerHTML = post.comments.map(comment => `
+                    <div class="comment">
+                        <p><span class="author">${comment.author}:</span> ${comment.content}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        // Fungsi untuk menambahkan komentar
+        function addComment(postId) {
+            const commentInput = document.getElementById(`comment-${postId}`);
+            const commentContent = commentInput.value.trim();
+            if (commentContent) {
+                const post = posts.find(p => p.id === postId);
+                if (post) {
+                    const newComment = {
+                        author: "Pengguna", // Bisa diganti dengan nama pengguna yang login
+                        content: commentContent
+                    };
+                    post.comments.push(newComment);
+                    localStorage.setItem('posts', JSON.stringify(posts));
+                    commentInput.value = ''; // Clear input
+                    showComments(postId); // Refresh komentar
+                }
+            } else {
+                alert("Komentar tidak boleh kosong!");
+            }
+        }
+
+        // Memperbarui pesan selamat dan hari setiap detik
+        setInterval(() => {
+            updateGreeting();
+            updateDay();
+        }, 1000);
+
+        // Panggil sekali saat halaman dimuat
+        updateGreeting();
+        updateDay();
+        displayPosts();
+
+        // Animasi scroll
+        document.addEventListener("DOMContentLoaded", function() {
+            const elements = document.querySelectorAll('.hidden');
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            elements.forEach(element => {
+                observer.observe(element);
+            });
+        });
+    </script>
+</body>
+</html>
